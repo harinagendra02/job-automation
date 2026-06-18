@@ -1,4 +1,6 @@
 requests
-gspread
-google-auth
+beautifulsoup4
 pandas
+gspread
+oauth2client
+discord-webhook
