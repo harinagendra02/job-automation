@@ -1,92 +1,50 @@
+Read links.txt
+↓
 
-import os
-import json
-import requests
-import gspread
-from google.oauth2.service_account import Credentials
-from datetime import datetime
+Open each LinkedIn Search URL
 
-# -----------------------------
+↓
 
-# Read GitHub Secrets
+Get newest post
 
-# -----------------------------
+↓
 
-DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
-GOOGLE_SHEET_ID = os.environ["GOOGLE_SHEET_ID"]
-GOOGLE_SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+Check duplicate
 
-# -----------------------------
+↓
 
-# Connect to Google Sheets
+Send to Google Sheet
 
-# -----------------------------
+↓
 
-creds_dict = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON)
+Send to Discord
 
-scopes = [
-"https://www.googleapis.com/auth/spreadsheets",
-"https://www.googleapis.com/auth/drive"
-]
+from sheets import add_row
+from discord_sender import send_message
 
-creds = Credentials.from_service_account_info(
-creds_dict,
-scopes=scopes
-)
+with open("links.txt") as f:
+    links = f.readlines()
 
-gc = gspread.authorize(creds)
-sheet = gc.open_by_key(GOOGLE_SHEET_ID).sheet1
+for link in links:
 
-# -----------------------------
+    posts = scrape_linkedin(link)
 
-# Test Data
+    for post in posts:
 
-# -----------------------------
+        message = f"""
+State : TX
+Author : {post['author']}
 
-date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-name = "Test User"
-profile_link = "https://example.com/profile"
-message = "GitHub Actions is working successfully!"
-post_link = "https://example.com/post"
+{post['text']}
 
-# -----------------------------
-
-# Send to Discord
-
-# -----------------------------
-
-discord_message = f"""
-🔔 Automation Test
-
-👤 Name: {name}
-
-📝 Message:
-{message}
-
-🔗 Profile:
-{profile_link}
-
-🔗 Post:
-{post_link}
+{post['url']}
 """
 
-requests.post(
-DISCORD_WEBHOOK_URL,
-json={"content": discord_message}
-)
+        add_row([
+            post['time'],
+            post['author'],
+            post['text'],
+            post['url']
+        ])
 
-# -----------------------------
-
-# Save to Google Sheets
-
-# -----------------------------
-
-sheet.append_row([
-date,
-name,
-profile_link,
-message,
-post_link
-])
-
-print("Success! Message sent to Discord and Google Sheets.")
+        send_message(message)
